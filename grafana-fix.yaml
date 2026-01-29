@@ -1,0 +1,19 @@
+grafana:
+  replicas: 1
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  persistence:
+    enabled: false
+
+  sidecar:
+    dashboards:
+      enabled: false
+    datasources:
+      enabled: false
