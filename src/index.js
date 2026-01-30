@@ -116,48 +116,56 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
-// Start server
-const server = app.listen(PORT, async () => {
-  logger.info(`Server started on port ${PORT}`);
-  
-  // Check DB connection on startup
-  const dbConnected = await db.checkConnection();
-  if (dbConnected) {
-    logger.info('Successfully connected to database');
-  } else {
-    logger.error('Failed to connect to database on startup');
-  }
-
-  // Simulate application initialization delay
-  setTimeout(() => {
-    isReady = true;
-    logger.info('Application is now ready to accept traffic');
-  }, 2000);
-});
-
 /**
  * Graceful Shutdown
  */
-const shutdown = (signal) => {
+function shutdown(server, signal) {
   logger.info(`${signal} received. Starting graceful shutdown...`);
   isReady = false;
 
-  server.close(async () => {
-    logger.info('Http server closed.');
-    try {
-      await db.pool.end();
-      logger.info('Database pool closed.');
-    } catch (err) {
-      logger.error({ err }, 'Error closing database pool');
-    }
+  if (server) {
+    server.close(async () => {
+      logger.info('Http server closed.');
+      try {
+        await db.pool.end();
+        logger.info('Database pool closed.');
+      } catch (err) {
+        logger.error({ err }, 'Error closing database pool');
+      }
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 
   setTimeout(() => {
     logger.warn('Could not close connections in time, forcefully shutting down');
     process.exit(1);
   }, 10000);
-};
+}
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+// Start server
+if (require.main === module) {
+  const server = app.listen(PORT, async () => {
+    logger.info(`Server started on port ${PORT}`);
+    
+    // Check DB connection on startup
+    const dbConnected = await db.checkConnection();
+    if (dbConnected) {
+      logger.info('Successfully connected to database');
+    } else {
+      logger.error('Failed to connect to database on startup');
+    }
+
+    // Simulate application initialization delay
+    setTimeout(() => {
+      isReady = true;
+      logger.info('Application is now ready to accept traffic');
+    }, 2000);
+  });
+
+  process.on('SIGTERM', () => shutdown(server, 'SIGTERM'));
+  process.on('SIGINT', () => shutdown(server, 'SIGINT'));
+}
+
+module.exports = app;

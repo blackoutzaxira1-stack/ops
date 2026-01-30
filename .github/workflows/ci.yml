@@ -29,24 +29,13 @@ jobs:
         run: npm ci
 
       - name: Static Code Analysis (Lint)
-        run: |
-          if [ -f package.json ] && npm run | grep lint; then
-            npm run lint
-          else
-            echo "Linting not configured – skipped"
-          fi
+        run: npm run lint
 
       - name: Run Unit Tests
-        run: |
-          if [ -f package.json ] && npm run | grep test; then
-            npm test
-          else
-            echo "Tests not configured – skipped"
-          fi
+        run: npm test
 
       - name: Dependency Security Audit
-        run: |
-          npm audit --audit-level=high || echo "Security warnings detected (non-blocking)"
+        run: npm audit --audit-level=high || echo "Security warnings detected (non-blocking)"
 
   build-and-push:
     name: Build & Publish Container Image
